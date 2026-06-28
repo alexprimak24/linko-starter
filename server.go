@@ -59,7 +59,6 @@ func (s *server) start() error {
 }
 
 func (s *server) shutdown(ctx context.Context) error {
-	s.logger.Println("Linko is shutting down")
 	return s.httpServer.Shutdown(ctx)
 }
 

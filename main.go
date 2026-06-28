@@ -35,8 +35,9 @@ func run(ctx context.Context, cancel context.CancelFunc, httpPort int, dataDir s
 	go func() {
 		serverErr = s.start()
 	}()
-
+	// ctx is already canceled there, so
 	<-ctx.Done()
+	// we create new context for 5 seconds to finish exsisting jobs
 	shutdownCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 

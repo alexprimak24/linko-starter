@@ -1,0 +1,1 @@
+- One of the onyl times when it is okay for a service to write a msg directly to STDERR instead of logger is => when error is due to the logger itself failing

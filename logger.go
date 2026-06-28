@@ -9,25 +9,39 @@ import (
 	"os"
 )
 
+type cleanupFunc func() error
+
 // approach of returning error and avoiding log.Fatal
 // is better for unit testing + cleanups
 // as if we fail there and just return, how we
 // are supposed to do some cleaunups in main
-func initializeLogger(logFile string) (logger *log.Logger, err error) {
+func initializeLogger(logFile string) (logger *log.Logger, cleanup cleanupFunc, err error) {
 	// if logfile exists, write to file too
 	if logFile != "" {
 		file, err := os.OpenFile(logFile, os.O_WRONLY|os.O_CREATE|os.O_APPEND, 0o644)
 		if err != nil {
-			return nil, fmt.Errorf("failed to open log file: %v", err)
+			// cleanup nil as file is probably nil
+			return nil, nil, fmt.Errorf("failed to open log file: %v", err)
 		}
 		bufferedFile := bufio.NewWriterSize(file, 8192)
 
 		multiWriter := io.MultiWriter(os.Stderr, bufferedFile)
 
-		return log.New(multiWriter, "", log.LstdFlags), nil
+		return log.New(multiWriter, "", log.LstdFlags), func() error {
+			flushErr := bufferedFile.Flush()
+			closeErr := file.Close()
+
+			if flushErr != nil {
+				return flushErr
+			}
+
+			return closeErr
+		}, nil
 	}
 
-	return log.New(os.Stderr, "", log.LstdFlags), nil
+	return log.New(os.Stderr, "", log.LstdFlags), func() error {
+		return nil
+	}, nil
 }
 
 func requestLogger(logger *log.Logger) func(http.Handler) http.Handler {

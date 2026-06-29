@@ -4,7 +4,7 @@ import (
 	"bufio"
 	"fmt"
 	"io"
-	"log"
+	"log/slog"
 	"net/http"
 	"os"
 )
@@ -15,7 +15,7 @@ type cleanupFunc func() error
 // is better for unit testing + cleanups
 // as if we fail there and just return, how we
 // are supposed to do some cleaunups in main
-func initializeLogger(logFile string) (logger *log.Logger, cleanup cleanupFunc, err error) {
+func initializeLogger(logFile string) (logger *slog.Logger, cleanup cleanupFunc, err error) {
 	// if logfile exists, write to file too
 	if logFile != "" {
 		file, err := os.OpenFile(logFile, os.O_WRONLY|os.O_CREATE|os.O_APPEND, 0o644)
@@ -27,7 +27,7 @@ func initializeLogger(logFile string) (logger *log.Logger, cleanup cleanupFunc, 
 
 		multiWriter := io.MultiWriter(os.Stderr, bufferedFile)
 
-		return log.New(multiWriter, "", log.LstdFlags), func() error {
+		return slog.New(slog.NewTextHandler(multiWriter, nil)), func() error {
 			flushErr := bufferedFile.Flush()
 			closeErr := file.Close()
 
@@ -39,16 +39,16 @@ func initializeLogger(logFile string) (logger *log.Logger, cleanup cleanupFunc, 
 		}, nil
 	}
 
-	return log.New(os.Stderr, "", log.LstdFlags), func() error {
+	return slog.New(slog.NewTextHandler(os.Stderr, nil)), func() error {
 		return nil
 	}, nil
 }
 
-func requestLogger(logger *log.Logger) func(http.Handler) http.Handler {
+func requestLogger(logger *slog.Logger) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			next.ServeHTTP(w, r)
-			logger.Printf("Served request: %s %s", r.Method, r.URL.Path)
+			logger.Info(fmt.Sprintf("Served request: %s %s", r.Method, r.URL.Path))
 		})
 	}
 }

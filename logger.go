@@ -18,7 +18,8 @@ type cleanupFunc func() error
 func initializeLogger(logFile string) (logger *slog.Logger, cleanup cleanupFunc, err error) {
 	handlers := []slog.Handler{
 		slog.NewTextHandler(os.Stderr, &slog.HandlerOptions{
-			Level: slog.LevelDebug,
+			Level:       slog.LevelDebug,
+			ReplaceAttr: replaceAttr,
 		}),
 	}
 
@@ -43,7 +44,8 @@ func initializeLogger(logFile string) (logger *slog.Logger, cleanup cleanupFunc,
 		}
 
 		handlers = append(handlers, slog.NewJSONHandler(bufferedFile, &slog.HandlerOptions{
-			Level: slog.LevelInfo,
+			Level:       slog.LevelInfo,
+			ReplaceAttr: replaceAttr,
 		}))
 		cleanups = append(cleanups, cleanup)
 	}
@@ -73,4 +75,16 @@ func requestLogger(logger *slog.Logger) func(http.Handler) http.Handler {
 			)
 		})
 	}
+}
+
+func replaceAttr(grops []string, a slog.Attr) slog.Attr {
+	if a.Key == "error" {
+		err, ok := a.Value.Any().(error)
+		if !ok {
+			return a
+		}
+		// if err we will print whole stack trace
+		return slog.String("error", fmt.Sprintf("%+v", err))
+	}
+	return a
 }

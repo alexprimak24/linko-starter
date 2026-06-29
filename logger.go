@@ -42,7 +42,7 @@ func initializeLogger(logFile string) (logger *slog.Logger, cleanup cleanupFunc,
 			return nil
 		}
 
-		handlers = append(handlers, slog.NewTextHandler(bufferedFile, &slog.HandlerOptions{
+		handlers = append(handlers, slog.NewJSONHandler(bufferedFile, &slog.HandlerOptions{
 			Level: slog.LevelInfo,
 		}))
 		cleanups = append(cleanups, cleanup)

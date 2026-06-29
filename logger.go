@@ -7,9 +7,16 @@ import (
 	"log/slog"
 	"net/http"
 	"os"
+
+	pkgerr "github.com/pkg/errors"
 )
 
 type cleanupFunc func() error
+
+type stackTracer interface {
+	error
+	StackTrace() pkgerr.StackTrace
+}
 
 // approach of returning error and avoiding log.Fatal
 // is better for unit testing + cleanups
@@ -83,8 +90,16 @@ func replaceAttr(grops []string, a slog.Attr) slog.Attr {
 		if !ok {
 			return a
 		}
-		// if err we will print whole stack trace
-		return slog.String("error", fmt.Sprintf("%+v", err))
+
+		if stackErr, ok := errors.AsType[stackTracer](err); ok {
+			return slog.GroupAttrs("error", slog.Attr{
+				Key:   "message",
+				Value: slog.StringValue(stackErr.Error()),
+			}, slog.Attr{
+				Key:   "stack_trace",
+				Value: slog.StringValue(fmt.Sprintf("%+v", stackErr.StackTrace())),
+			})
+		}
 	}
 	return a
 }

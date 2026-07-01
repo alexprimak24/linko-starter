@@ -3,6 +3,7 @@ package main
 import (
 	"bufio"
 	"context"
+	"crypto/rand"
 	"errors"
 	"fmt"
 	"io"
@@ -75,10 +76,19 @@ func initializeLogger(logFile string) (logger *slog.Logger, cleanup cleanupFunc,
 	return slog.New(slog.NewMultiHandler(handlers...)), cleanupFunc, nil
 }
 
+func httpError(ctx context.Context, w http.ResponseWriter, status int, err error) {
+	if logCtx, ok := ctx.Value(logContextKey).(*LogContext); ok {
+		logCtx.Error = err
+	}
+	http.Error(w, err.Error(), status)
+}
+
 const logContextKey contextKey = "log_context"
 
 type LogContext struct {
-	Username string
+	RequestID string
+	Username  string
+	Error     error
 }
 
 func requestLogger(logger *slog.Logger) func(http.Handler) http.Handler {
@@ -104,10 +114,15 @@ func requestLogger(logger *slog.Logger) func(http.Handler) http.Handler {
 				slog.Int("request_body_bytes", spyReader.bytesRead),
 				slog.Int("response_status", spyWriter.statusCode),
 				slog.Int("response_body_bytes", spyWriter.bytesWritten),
+				slog.String("request_id", spyWriter.Header().Get("X-Request-ID")),
 			}
 
 			if logCtx.Username != "" {
 				attrs = append(attrs, slog.String("user", logCtx.Username))
+			}
+
+			if logCtx.Error != nil {
+				attrs = append(attrs, slog.Any("error", logCtx.Error))
 			}
 
 			logger.Info("Served request", attrs...)
@@ -186,4 +201,18 @@ func replaceAttr(grops []string, a slog.Attr) slog.Attr {
 		return slog.GroupAttrs("error", errorAttrs(err)...)
 	}
 	return a
+}
+
+func reqIdMiddleware() func(http.Handler) http.Handler {
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			requestID := r.Header.Get("X-Request-ID")
+			if requestID == "" {
+				requestID = rand.Text()
+			}
+
+			w.Header().Set("X-Request-ID", requestID)
+			next.ServeHTTP(w, r)
+		})
+	}
 }

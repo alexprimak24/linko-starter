@@ -13,6 +13,8 @@ import (
 	"time"
 
 	"boot.dev/linko/internal/linkoerr"
+	tint "github.com/lmittmann/tint"
+	"github.com/mattn/go-isatty"
 	pkgerr "github.com/pkg/errors"
 )
 
@@ -28,10 +30,14 @@ type stackTracer interface {
 // as if we fail there and just return, how we
 // are supposed to do some cleaunups in main
 func initializeLogger(logFile string) (logger *slog.Logger, cleanup cleanupFunc, err error) {
+	stderrFD := os.Stderr.Fd()
+	useColor := isatty.IsTerminal(stderrFD) || isatty.IsCygwinTerminal(stderrFD)
+
 	handlers := []slog.Handler{
-		slog.NewTextHandler(os.Stderr, &slog.HandlerOptions{
+		tint.NewHandler(os.Stderr, &tint.Options{
 			Level:       slog.LevelDebug,
 			ReplaceAttr: replaceAttr,
+			NoColor:     !useColor,
 		}),
 	}
 

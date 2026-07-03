@@ -1,4 +1,8 @@
-func safeDSN(dsn string) string {
+package main
+
+import "net/url"
+
+func _(dsn string) string {
 	parsed, err := url.Parse(dsn)
 	if err != nil {
 		return "invalid dsn"
@@ -11,7 +15,7 @@ func safeDSN(dsn string) string {
 	return parsed.String()
 }
 
-logger.Info("connecting to database",
-	"dsn", safeDSN(dsn),
-)
+// logger.Info("connecting to database",
+// 	"dsn", safeDSN(dsn),
+// )
 // 2024-01-15T10:30:45.123Z INFO msg="connecting to database" dsn="postgres://admin:***@db.example.com/appdb"

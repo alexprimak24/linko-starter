@@ -1,7 +1,6 @@
 package main
 
 import (
-	"bufio"
 	"context"
 	"crypto/rand"
 	"errors"
@@ -16,6 +15,7 @@ import (
 	tint "github.com/lmittmann/tint"
 	"github.com/mattn/go-isatty"
 	pkgerr "github.com/pkg/errors"
+	"gopkg.in/natefinch/lumberjack.v2"
 )
 
 type cleanupFunc func() error
@@ -44,24 +44,24 @@ func initializeLogger(logFile string) (logger *slog.Logger, cleanup cleanupFunc,
 	cleanups := []cleanupFunc{}
 	// if logfile exists, write to file too
 	if logFile != "" {
-		file, err := os.OpenFile(logFile, os.O_WRONLY|os.O_CREATE|os.O_APPEND, 0o644)
-		if err != nil {
-			// cleanup nil as file is probably nil
-			return nil, nil, fmt.Errorf("failed to open log file: %v", err)
+		logger := &lumberjack.Logger{
+			Filename:   logFile,
+			MaxSize:    1,
+			MaxAge:     28,
+			MaxBackups: 10,
+			LocalTime:  false,
+			Compress:   true,
 		}
-		bufferedFile := bufio.NewWriterSize(file, 8192)
 
 		cleanup := func() error {
-			if err := bufferedFile.Flush(); err != nil {
-				return fmt.Errorf("failed to flush log file: %w", err)
+			if err := logger.Close(); err != nil {
+				return fmt.Errorf("failed to closed file logger: %w", err)
 			}
-			if err := file.Close(); err != nil {
-				return fmt.Errorf("failed to close log file: %w", err)
-			}
+
 			return nil
 		}
 
-		handlers = append(handlers, slog.NewJSONHandler(bufferedFile, &slog.HandlerOptions{
+		handlers = append(handlers, slog.NewJSONHandler(logger, &slog.HandlerOptions{
 			Level:       slog.LevelInfo,
 			ReplaceAttr: replaceAttr,
 		}))

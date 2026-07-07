@@ -1,0 +1,26 @@
+File: linko
+Build ID: 60c0edf0aa466c4a15b780db840a855bca06c991
+Type: inuse_space
+Time: 2026-07-07 18:01:23 EEST
+Duration: 30s, Total samples = 4171.45kB 
+Showing nodes accounting for 4171.45kB, 100% of 4171.45kB total
+      flat  flat%   sum%        cum   cum%
+ 3658.89kB 87.71% 87.71%  3658.89kB 87.71%  internal/bytealg.MakeNoZero
+  512.56kB 12.29%   100%   512.56kB 12.29%  sync.(*Pool).pinSlow
+         0     0%   100%  3658.89kB 87.71%  main.(*server).handlerRedirect
+         0     0%   100%  3658.89kB 87.71%  main.newServer.metricsMiddleware.func5
+         0     0%   100%  3658.89kB 87.71%  main.newServer.newServer.reqIdMiddleware.func1.func4
+         0     0%   100%  3658.89kB 87.71%  main.newServer.newServer.requestLogger.func2.func3
+         0     0%   100%  3658.89kB 87.71%  net/http.(*ServeMux).ServeHTTP
+         0     0%   100%   512.56kB 12.29%  net/http.(*conn).close
+         0     0%   100%   512.56kB 12.29%  net/http.(*conn).finalFlush
+         0     0%   100%  4171.45kB   100%  net/http.(*conn).serve
+         0     0%   100%   512.56kB 12.29%  net/http.(*conn).serve.func1
+         0     0%   100%  3658.89kB 87.71%  net/http.HandlerFunc.ServeHTTP
+         0     0%   100%   512.56kB 12.29%  net/http.putBufioWriter
+         0     0%   100%  3658.89kB 87.71%  net/http.serverHandler.ServeHTTP
+         0     0%   100%  3658.89kB 87.71%  strings.(*Builder).Grow
+         0     0%   100%  3658.89kB 87.71%  strings.(*Builder).grow
+         0     0%   100%  3658.89kB 87.71%  strings.Repeat
+         0     0%   100%   512.56kB 12.29%  sync.(*Pool).Put
+         0     0%   100%   512.56kB 12.29%  sync.(*Pool).pin

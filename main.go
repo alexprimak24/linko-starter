@@ -30,6 +30,17 @@ func run(ctx context.Context, cancel context.CancelFunc, httpPort int, dataDir s
 	env := os.Getenv("ENV")
 	hostname, _ := os.Hostname()
 
+	shutdownTracing, err := initTracing(ctx)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "failed to initialize tracing: %v\n", err)
+		return 1
+	}
+	defer func() {
+		if err := shutdownTracing(context.Background()); err != nil {
+			fmt.Fprintf(os.Stderr, "Failed to shut down tracing: %v\n", err)
+		}
+	}()
+
 	logger, cleanup, err := initializeLogger(os.Getenv("LINKO_LOG_FILE"))
 	logger = logger.With(
 		slog.String("git_sha", build.GitSHA),
